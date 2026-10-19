@@ -19,7 +19,7 @@ npm run dev                  # http://localhost:3000
 | Product page: gallery, options, add to bag | `src/app/products/[slug]/page.tsx`, `src/components/product/` |
 | **Instant try-on**: finds the face in the browser (MediaPipe) and fits the wig cut-out to it, with sliders to adjust | `src/components/product/TryOn.tsx`, `src/lib/tryon.ts` |
 | **Realistic AI try-on**: server route that sends the photo and the wig reference to an image-editing model | `src/app/api/try-on/route.ts`, `src/lib/ai/` |
-| Bag (saved in the browser) and Stripe Checkout | `src/components/cart/CartDrawer.tsx`, `src/app/api/checkout/route.ts` |
+| Bag, saved in the browser. Checkout isn't connected yet. | `src/components/cart/CartDrawer.tsx` |
 | Footer, photo privacy page | `src/components/layout/Footer.tsx`, `src/app/privacy/page.tsx` |
 
 ## Configuration
@@ -29,7 +29,6 @@ npm run dev                  # http://localhost:3000
 | `GEMINI_API_KEY` | Realistic AI try-on. Without it, the instant preview still works. |
 | `GEMINI_IMAGE_MODEL` | Optional. Overrides the model (default `gemini-2.5-flash-image`). |
 | `TRY_ON_LIMIT_PER_HOUR` | Optional. AI try-ons per visitor per hour (default 5). |
-| `STRIPE_SECRET_KEY` | Checkout. Without it, the bag shows a "not connected" message. |
 
 To use a different AI provider, implement `TryOnProvider` in `src/lib/ai/` and return it from `getTryOnProvider()`.
 
@@ -39,6 +38,22 @@ To use a different AI provider, implement `TryOnProvider` in `src/lib/ai/` and r
 - **Products**: `src/lib/products.ts`. All 6 products reuse the hero photos for now.
 - **Shipping and returns wording** (free shipping over $150, 30-day returns): Hero, Footer and the product page.
 - **Newsletter**: not connected to an email provider.
+
+## Hero turntable video (optional)
+
+The hero switches between 5 still photos as the cursor moves. A short turntable video turns more smoothly, because the cursor scrubs through it frame by frame. How to shoot it:
+
+- Use a tripod, keep the same framing as the photos and a plain white background.
+- The model turns slowly from **left profile → front → right profile**, about 4–6 seconds, keeping her head steady.
+- Hold the camera still, with no zoom.
+
+Then convert it and switch it on:
+
+```bash
+scripts/prepare-hero-video.sh my-turntable.mov            # add --reverse if she turns the other way
+```
+
+Set `TURNTABLE_VIDEO` in `src/components/home/HeroModel.tsx` as the script prints. Every frame is encoded as a keyframe, so jumping to any point in the video is instant.
 
 ## Adding a wig's try-on overlay
 

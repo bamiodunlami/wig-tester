@@ -105,7 +105,7 @@ export function Footer() {
           <p>
             © <CopyrightYear /> {site.name}. All rights reserved.
           </p>
-          <p>Secure checkout · Free shipping over $150 · 30-day returns</p>
+          <p>Free shipping over $150 · 30-day returns</p>
         </div>
       </div>
     </footer>

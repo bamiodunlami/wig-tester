@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCart } from "@/store/cart";
 import { getProduct } from "@/lib/products";
@@ -12,7 +12,6 @@ import { useMounted } from "@/lib/useMounted";
 export function CartDrawer() {
   const { items, open, setOpen, setQuantity, remove } = useCart();
   const mounted = useMounted();
-  const [status, setStatus] = useState<{ loading: boolean; error?: string }>({ loading: false });
 
   useEffect(() => {
     if (!open) return;
@@ -28,22 +27,6 @@ export function CartDrawer() {
       })
     : [];
   const subtotal = lines.reduce((sum, l) => sum + l.product.price * l.item.quantity, 0);
-
-  async function checkout() {
-    setStatus({ loading: true });
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.url) throw new Error(data.error ?? "Checkout failed. Please try again.");
-      window.location.href = data.url;
-    } catch (e) {
-      setStatus({ loading: false, error: e instanceof Error ? e.message : String(e) });
-    }
-  }
 
   return (
     <AnimatePresence>
@@ -166,18 +149,13 @@ export function CartDrawer() {
                     <span className="font-semibold">{formatPrice(subtotal)}</span>
                   </div>
                   <p className="mt-1 text-xs text-ink-muted">Shipping and taxes calculated at checkout.</p>
-                  {status.error && (
-                    <p role="alert" className="mt-3 rounded-lg bg-blush-50 px-3 py-2 text-sm text-blush-700">
-                      {status.error}
-                    </p>
-                  )}
+                  {/* Payments aren't connected yet; this becomes the checkout button later. */}
                   <button
                     type="button"
-                    onClick={checkout}
-                    disabled={status.loading}
-                    className="mt-5 h-12 w-full rounded-full bg-ink text-sm font-semibold text-white transition hover:bg-blush-600 disabled:opacity-60"
+                    disabled
+                    className="mt-5 h-12 w-full cursor-not-allowed rounded-full bg-ink text-sm font-semibold text-white opacity-50"
                   >
-                    {status.loading ? "Redirecting…" : "Checkout"}
+                    Checkout coming soon
                   </button>
                 </div>
               </>

@@ -21,10 +21,77 @@ const FRAMES = [
   { src: "/hero/profile-right.jpg", label: "Side" },
 ];
 const TOP_DOWN = { src: "/hero/top-down.jpg", label: "Parting" };
+
+// A turntable clip gives a smoother turn than the stills: the cursor scrubs through it.
+// It must start on the left profile and end on the right profile, and be encoded with
+// scripts/prepare-hero-video.sh so every frame can be jumped to instantly.
+// `src` has no extension: both .mp4 and .webm are served. Set to null to use the still photos above.
+const TURNTABLE_VIDEO: { src: string; poster: string } | null = null;
 const FRONT_INDEX = 2;
 const IDLE_MS = 3500;
 
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v));
+
+/** Scrubs a muted video to follow `progress` (0 = first frame, 1 = last frame). */
+function TurntableVideo({ src, poster, progress }: { src: string; poster: string; progress: MotionValue<number> }) {
+  const ref = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    let seeking = false;
+    let pending: number | null = null;
+
+    // Only one seek at a time; while it runs, remember just the latest target.
+    const seek = (p: number) => {
+      if (seeking || !video.duration) {
+        pending = p;
+        return;
+      }
+      seeking = true;
+      video.currentTime = clamp(p) * Math.max(0, video.duration - 0.04);
+    };
+    const onSeeked = () => {
+      seeking = false;
+      if (pending !== null) {
+        const p = pending;
+        pending = null;
+        seek(p);
+      }
+    };
+    const onReady = () => seek(pending ?? progress.get());
+
+    video.addEventListener("seeked", onSeeked);
+    video.addEventListener("loadedmetadata", onReady);
+    // iOS only loads video frames after a play attempt.
+    video.play().then(
+      () => video.pause(),
+      () => {},
+    );
+    if (video.readyState >= 1) onReady();
+    const unsubscribe = progress.on("change", seek);
+    return () => {
+      unsubscribe();
+      video.removeEventListener("seeked", onSeeked);
+      video.removeEventListener("loadedmetadata", onReady);
+    };
+  }, [progress]);
+
+  return (
+    <video
+      ref={ref}
+      poster={poster}
+      muted
+      playsInline
+      preload="auto"
+      disablePictureInPicture
+      className="absolute inset-0 h-full w-full object-cover"
+    >
+      <source src={`${src}.mp4`} type="video/mp4" />
+      <source src={`${src}.webm`} type="video/webm" />
+    </video>
+  );
+}
 
 /** Fully visible near its own position, cross-fading over a short band to its neighbours. */
 function Frame({
@@ -65,6 +132,7 @@ export function HeroModel() {
   const sy = useSpring(my, { stiffness: 90, damping: 18, mass: 0.6 });
 
   const position = useTransform(sx, [-1, 1], [0, FRAMES.length - 1]);
+  const progress = useTransform(sx, [-1, 1], [0, 1]);
   const topDownOpacity = useTransform(sy, (y) => clamp((-y - 0.45) / 0.3));
   const rotateY = useTransform(sx, [-1, 1], [-7, 7]);
   const rotateX = useTransform(sy, [-1, 1], [5, -5]);
@@ -145,9 +213,13 @@ export function HeroModel() {
           className="absolute inset-0 mix-blend-multiply"
           style={{ maskImage: "linear-gradient(to bottom, black 82%, transparent)" }}
         >
-          {FRAMES.map((f, i) => (
-            <Frame key={f.src} index={i} position={position} src={f.src} priority={i === FRONT_INDEX} />
-          ))}
+          {TURNTABLE_VIDEO ? (
+            <TurntableVideo src={TURNTABLE_VIDEO.src} poster={TURNTABLE_VIDEO.poster} progress={progress} />
+          ) : (
+            FRAMES.map((f, i) => (
+              <Frame key={f.src} index={i} position={position} src={f.src} priority={i === FRONT_INDEX} />
+            ))
+          )}
           <motion.div className="absolute inset-0" style={{ opacity: topDownOpacity }}>
             <Image
               src={TOP_DOWN.src}
@@ -179,7 +251,7 @@ export function HeroModel() {
             />
           ))}
         </div>
-        <span className="w-28">{caption} view</span>
+        <span className="w-40">{caption} view</span>
       </div>
     </div>
   );
