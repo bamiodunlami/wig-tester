@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* Brand palette: blush pink sampled from the model's dress, with black as the secondary. */
+@theme {
+  --color-blush-50: #fdf4f5;
+  --color-blush-100: #fae6e9;
+  --color-blush-200: #f4ccd2;
+  --color-blush-300: #edb6bf;
+  --color-blush-400: #e5a2ac;
+  --color-blush-500: #d9808d;
+  --color-blush-600: #b85a69;
+  --color-blush-700: #8f3f4c;
+  --color-ink: #0b0b0b;
+  --color-ink-soft: #3a3a3a;
+  --color-ink-muted: #6b6466;
+
+  --font-display: var(--font-display-face), "Times New Roman", serif;
+  --font-sans: var(--font-sans-face), ui-sans-serif, system-ui, sans-serif;
+
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
